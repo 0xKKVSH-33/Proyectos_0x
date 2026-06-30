@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CipherVault ES — Cifrado Personalizado Español</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app">
+
+    <header class="header">
+      <div class="logo">
+        <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4l5 2.18V11c0 3.5-2.33 6.79-5 7.93-2.67-1.14-5-4.43-5-7.93V7.18L12 5z"/></svg>
+      </div>
+      <div>
+        <h1 class="title">CipherVault ES</h1>
+        <p class="subtitle">Abecedario Español (ñ, ll) · Saltos −7+3 · PBKDF2-SHA-512 · AES-256-GCM ×2 (512 bits)</p>
+      </div>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="enc">🔒 Cifrar</button>
+      <button class="tab" data-tab="dec">🔓 Descifrar</button>
+      <button class="tab" data-tab="abc">🔤 Abecedario</button>
+      <button class="tab" data-tab="info">ℹ️ Algoritmo</button>
+    </nav>
+
+    <!-- CIFRAR -->
+    <section id="tab-enc" class="tab-content active">
+      <div class="layers-grid">
+        <div class="layer-card">
+          <div class="layer-num">Fase 1</div>
+          <div class="layer-title">Sustitución ES</div>
+          <div class="layer-desc">Abecedario español con ñ y ll · Salto −7 luego +3</div>
+        </div>
+        <div class="layer-card">
+          <div class="layer-num">Fase 2</div>
+          <div class="layer-title">AES-256-GCM #1</div>
+          <div class="layer-desc">PBKDF2-SHA-512 · 310,000 iter · Salt aleatorio</div>
+        </div>
+        <div class="layer-card">
+          <div class="layer-num">Fase 3</div>
+          <div class="layer-title">AES-256-GCM #2</div>
+          <div class="layer-desc">Segunda clave independiente · Clave total: 512 bits</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="enc-input">Texto a cifrar</label>
+        <textarea id="enc-input" placeholder="Escribe tu mensaje en español..." rows="5"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="enc-pw">Contraseña maestra</label>
+        <div class="pw-wrap">
+          <input type="password" id="enc-pw" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+          <button class="pw-eye" onclick="togglePw('enc-pw', this)" title="Mostrar/ocultar">👁</button>
+        </div>
+        <div class="strength-bar"><div class="strength-fill" id="str-fill"></div></div>
+        <div class="strength-txt" id="str-txt"></div>
+      </div>
+
+      <div id="enc-status" class="status"></div>
+      <button class="btn-main" id="btn-enc" onclick="doEncrypt()">🔒 Cifrar mensaje</button>
+
+      <div class="field">
+        <label>Resultado cifrado</label>
+        <div class="out-box" id="enc-out">El texto cifrado aparecerá aquí...</div>
+        <div class="out-actions">
+          <button class="btn-sm" onclick="copyEl('enc-out')">📋 Copiar</button>
+          <button class="btn-sm" onclick="dlEl('enc-out', 'mensaje_cifrado.cvs')">💾 Descargar .cvs</button>
+          <button class="btn-sm" onclick="clrEnc()">🗑 Limpiar</button>
+        </div>
+      </div>
+
+      <div class="chips">
+        <span class="chip on">Español + ñ + ll (28 letras)</span>
+        <span class="chip on">−7 luego +3</span>
+        <span class="chip">Salt 128 bits</span>
+        <span class="chip">IV 96 bits</span>
+        <span class="chip">PBKDF2 ×310,000</span>
+        <span class="chip">Clave maestra 512 bits</span>
+      </div>
+    </section>
+
+    <!-- DESCIFRAR -->
+    <section id="tab-dec" class="tab-content">
+      <div class="field">
+        <label for="dec-input">Texto cifrado (formato .cvs)</label>
+        <textarea id="dec-input" placeholder="Pega aquí el texto generado por CipherVault ES..." rows="5"></textarea>
+      </div>
+      <div class="field">
+        <label for="dec-pw">Contraseña maestra</label>
+        <div class="pw-wrap">
+          <input type="password" id="dec-pw" placeholder="La misma contraseña usada al cifrar">
+          <button class="pw-eye" onclick="togglePw('dec-pw', this)" title="Mostrar/ocultar">👁</button>
+        </div>
+      </div>
+      <div id="dec-status" class="status"></div>
+      <button class="btn-main" onclick="doDecrypt()">🔓 Descifrar mensaje</button>
+      <div class="field">
+        <label>Mensaje descifrado</label>
+        <div class="out-box" id="dec-out">El texto descifrado aparecerá aquí...</div>
+        <div class="out-actions">
+          <button class="btn-sm" onclick="copyEl('dec-out')">📋 Copiar</button>
+          <button class="btn-sm" onclick="clrDec()">🗑 Limpiar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABECEDARIO -->
+    <section id="tab-abc" class="tab-content">
+      <h2 class="section-title">Abecedario español — 28 posiciones</h2>
+      <p class="section-desc">Incluye <strong>ñ</strong> y <strong>ll</strong> como letras independientes, tal como en el abecedario tradicional español.</p>
+      <div class="abc-grid" id="abc-grid"></div>
+
+      <h2 class="section-title" style="margin-top:1.5rem">Demostración de saltos (−7 luego +3)</h2>
+      <p class="section-desc">Cada letra retrocede 7 posiciones, luego avanza 3 (desplazamiento neto: −4). El abecedario es circular.</p>
+      <div id="demo-rows"></div>
+
+      <h2 class="section-title" style="margin-top:1.5rem">Prueba cualquier letra</h2>
+      <div class="test-row">
+        <div class="field" style="margin:0;flex:1">
+          <label>Letra original</label>
+          <input type="text" id="test-in" maxlength="2" placeholder="ej: b" oninput="testLetra(this.value)">
+        </div>
+        <div class="arrow">→</div>
+        <div class="field" style="margin:0;flex:1">
+          <label>Letra cifrada</label>
+          <div class="test-out" id="test-out">—</div>
+        </div>
+        <div class="field" style="margin:0;flex:2">
+          <label>Detalle</label>
+          <div class="test-detail" id="test-detail">Escribe una letra</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- INFO -->
+    <section id="tab-info" class="tab-content">
+      <h2 class="section-title">¿Cómo funciona el cifrado?</h2>
+
+      <div class="info-step">
+        <div class="info-num">01</div>
+        <div>
+          <strong>Fase 1 — Sustitución española personalizada</strong>
+          <p>Cada letra del texto se busca en el abecedario de 28 posiciones (a, b, c, d, e, f, g, h, i, j, k, l, ll, m, n, ñ, o, p, q, r, s, t, u, v, w, x, y, z). Se retroceden exactamente <strong>7 posiciones</strong> y luego se avanza <strong>3 posiciones</strong>, con wrap-around circular. Resultado: desplazamiento neto de −4. Los números, signos y espacios pasan sin modificación.</p>
+        </div>
+      </div>
+
+      <div class="info-step">
+        <div class="info-num">02</div>
+        <div>
+          <strong>Fase 2 — AES-256-GCM (primera capa)</strong>
+          <p>El texto ya sustituido se cifra con AES-256 en modo GCM (Galois/Counter Mode). La clave se genera con <strong>PBKDF2-SHA-512</strong> usando 310,000 iteraciones y un salt de 128 bits generado aleatoriamente. El modo GCM añade un tag de autenticación de 128 bits: si alguien modifica el ciphertext, el descifrado falla automáticamente.</p>
+        </div>
+      </div>
+
+      <div class="info-step">
+        <div class="info-num">03</div>
+        <div>
+          <strong>Fase 3 — AES-256-GCM (segunda capa)</strong>
+          <p>El resultado de la Fase 2 se vuelve a cifrar con una <strong>segunda derivación de clave completamente independiente</strong> (salt e IV distintos y aleatorios). La clave maestra efectiva combinada es de <strong>512 bits</strong>. Romper una capa solo revela otro ciphertext AES-256.</p>
+        </div>
+      </div>
+
+      <div class="info-format">
+        <strong>Formato de salida:</strong>
+        <code>cvs2:[salt1_b64]:[iv1_b64]:[tag1_b64]:[body1_b64]:[salt2_b64]:[iv2_b64]:[tag2_b64]:[body2_b64]</code>
+        <p style="margin-top:8px;font-size:13px;color:#888">Todos los parámetros necesarios para el descifrado están embebidos. Sin la contraseña correcta, revertir las 3 fases es computacionalmente inviable.</p>
+      </div>
+
+      <div class="info-step">
+        <div class="info-num">🔐</div>
+        <div>
+          <strong>¿Por qué es difícil de romper?</strong>
+          <ul class="why-list">
+            <li>La sustitución española con ñ y ll crea un alfabeto no estándar, resistente a ataques de frecuencia en inglés.</li>
+            <li>AES-256 con GCM es el estándar del gobierno de EE.UU. para datos clasificados.</li>
+            <li>PBKDF2 con 310,000 iteraciones hace que probar cada contraseña tome milisegundos, haciendo ataques de fuerza bruta inviables.</li>
+            <li>El salt aleatorio evita rainbow tables: el mismo mensaje + contraseña produce resultados distintos cada vez.</li>
+            <li>La doble capa AES significa que un atacante necesita romper dos cifrados independientes.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /app -->
+
+  <footer class="footer">
+    <span>CipherVault ES — Proyecto Final Ciberseguridad</span>
+    <span>AES-256-GCM · PBKDF2-SHA-512 · Abecedario Español</span>
+  </footer>
+
+  <script src="cipher.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
